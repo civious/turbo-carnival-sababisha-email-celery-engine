@@ -105,3 +105,7 @@ def get_redis_connection():
     except Exception as e:
         logger.error(f"Failed to connect to Redis: {e}")
         raise
+
+
+
+app.autodiscover_tasks()

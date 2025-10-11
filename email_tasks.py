@@ -22,7 +22,7 @@ from celery_config import app
 
 
 # Now import and register tasks
-app.autodiscover_tasks(['email_tasks'])
+
 
 # Database functions (keep these)
 def get_unsent_messages():

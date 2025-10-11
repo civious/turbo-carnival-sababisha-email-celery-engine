@@ -112,7 +112,7 @@ def log_error_sync(error_data):
 def scrape_unsent_emails(self):
     """Process unsent emails with observability"""
     task_id = self.request.id
-    logger.set_task_id(task_id)
+    logger.set_task_ref(task_id)
     
     tracer = get_tracer()
     

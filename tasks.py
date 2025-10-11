@@ -362,9 +362,9 @@ def send_email_with_file(self, email_data):
             raise self.retry(exc=exc, countdown=60)
         except MaxRetriesExceededError:
             return str(exc), False
-
-@app.task
 @trace_task
+@profile_task
+@app.task
 def log_error(error_data):
     """Task for logging errors"""
     log_error_sync(error_data)

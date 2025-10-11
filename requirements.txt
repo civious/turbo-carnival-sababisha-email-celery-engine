@@ -1,7 +1,6 @@
 celery==5.3.4
 redis==4.6.0
 sqlalchemy==2.0.23
-pyodbc==4.0.39
 sqlalchemy-utils==0.41.1
 python-dotenv==1.0.0
 email-validator==2.1.0

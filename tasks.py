@@ -75,7 +75,7 @@ def mark_failed(email_id: int, reason: str):
         db.execute(
             text("""
                 UPDATE OutEmail 
-                SET retries = retries + 1, failed_reason = :reason 
+                SET retries = retries + 1, failedreason = :reason 
                 WHERE id = :id
             """),
             {'id': email_id, 'reason': reason}
@@ -112,7 +112,7 @@ def log_error_sync(error_data):
 def scrape_unsent_emails(self):
     """Process unsent emails with observability"""
     task_id = self.request.id
-    logger.set_task_ref(task_id)
+    logger.set_task_id(task_id)
     
     tracer = get_tracer()
     
@@ -144,14 +144,23 @@ def scrape_unsent_emails(self):
                         'recipient': email['email']
                     })
                     
+                    # FIX: Use the actual Celery task objects, not function references
                     if email['has_file'] == 1:
-                        result = send_email_with_file.apply_async(
-                            args=[email]
+                        # Use send_email_with_file task (the Celery task object)
+                        from celery_config import app
+                        result = app.send_task(
+                            'tasks.send_email_with_file',
+                            args=[email],
+                            queue='datagemail-queue'
                         )
                         message, status = result.get(timeout=300)
                     else:
-                        result = send_email.apply_async(
-                            args=[email]
+                        # Use send_email task (the Celery task object)
+                        from celery_config import app
+                        result = app.send_task(
+                            'tasks.send_email',
+                            args=[email],
+                            queue='datagemail-queue'
                         )
                         message, status = result.get(timeout=300)
                     
@@ -200,7 +209,6 @@ def scrape_unsent_emails(self):
         }
         log_error_sync(error_data)
         raise self.retry(exc=exc)
-
 @trace_task
 @profile_task
 @app.task(bind=True, max_retries=3, default_retry_delay=60)

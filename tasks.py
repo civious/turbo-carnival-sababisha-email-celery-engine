@@ -29,7 +29,7 @@ def get_unsent_messages():
         query = text("""
             SELECT id, email, subject, msg, hasfile, filetobesent, documentname, retries
             FROM OutEmail 
-            WHERE is_sent = 0 AND retries < 3
+            WHERE issent = 0 AND retries < 3
         """)
         
         result = db.execute(query)
@@ -58,7 +58,7 @@ def mark_sent(email_id: int):
     try:
         db = SessionLocal()
         db.execute(
-            text("UPDATE OutEmail SET is_sent = 1 WHERE id = :id"),
+            text("UPDATE OutEmail SET issent = 1 WHERE id = :id"),
             {'id': email_id}
         )
         db.commit()
@@ -251,7 +251,7 @@ def send_email(self, email_data):
         
         # Send email
         with smtplib.SMTP_SSL('mail.datag.co.ke', 465) as server:
-            server.login('datag@datag.co.ke', 'pswd')
+            server.login('datag@datag.co.ke',  os.getenv('SMTP_PASSWORD'))
             server.send_message(message)
         
         logger.info("Email sent successfully", extra={
@@ -332,7 +332,7 @@ def send_email_with_file(self, email_data):
         
         # Send email
         with smtplib.SMTP_SSL('mail.datag.co.ke', 465) as server:
-            server.login('datag@datag.co.ke', 'pswd')
+            server.login('datag@datag.co.ke', os.getenv('SMTP_PASSWORD'))
             server.send_message(message)
         
         logger.info("Email with attachment sent successfully", extra={

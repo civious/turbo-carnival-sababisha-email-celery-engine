@@ -383,12 +383,3 @@ def health_check():
     return "OK"
 
 # Explicitly register tasks
-app.conf.update(
-    task_routes={
-        'email_tasks.scrape_unsent_emails': {'queue': 'datagemail-queue'},
-        'email_tasks.send_email': {'queue': 'datagemail-queue'},
-        'email_tasks.send_email_with_file': {'queue': 'datagemail-queue'},
-        'email_tasks.log_error': {'queue': 'log-queue'},
-        'email_tasks.health_check': {'queue': 'log-queue'},
-    },
-)

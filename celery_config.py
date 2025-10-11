@@ -4,10 +4,10 @@ import os
 from dotenv import load_dotenv
 import redis
 from loki_loghandler import logger
+
 load_dotenv()
 
 # Parse Redis URL with password
-
 redis_host = os.getenv('REDIS_HOST', 'localhost')
 redis_port = int(os.getenv('REDIS_PORT', 6379))
 redis_password = os.getenv('REDIS_PASSWORD', '')
@@ -18,12 +18,13 @@ if redis_password:
     redis_url = f"redis://:{redis_password}@{redis_host}:{redis_port}/{redis_db}"
 else:
     redis_url = f"redis://{redis_host}:{redis_port}/{redis_db}"
+
 # Celery app configuration with Redis authentication
 app = Celery(
     'email_service',
     broker=redis_url,
     backend=redis_url,
-    include=['email_tasks'],
+    include=['email_tasks'],  # This tells Celery to import email_tasks
     broker_connection_retry_on_startup=True
 )
 
@@ -77,9 +78,9 @@ app.conf.update(
 
 # Beat Schedule for periodic tasks
 app.conf.beat_schedule = {
-    'scrape-unsent-emails-every-10-seconds': {
+    'scrape-unsent-emails-every-30-seconds': {
         'task': 'email_tasks.scrape_unsent_emails',
-        'schedule': 10.0,
+        'schedule': 30.0,  # Changed to 30 seconds as requested
         'options': {'queue': 'datagemail-queue'}
     },
 }
@@ -105,4 +106,3 @@ def get_redis_connection():
     except Exception as e:
         logger.error(f"Failed to connect to Redis: {e}")
         raise
-

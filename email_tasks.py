@@ -1,4 +1,4 @@
-from celery import Celery, current_task
+from celery import current_task
 from celery.exceptions import MaxRetriesExceededError
 import smtplib
 from email.mime.text import MIMEText
@@ -11,20 +11,17 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 
+# Import app from celery_config
+from celery_config import app
+
 # Import safe observability
 from loki_loghandler import logger
 from profiling import profile_task
 from tracing import get_tracer, trace_task
 from database import SessionLocal
 from models import OutEmail, ErrorLogs
-from celery_config import app
-# Initialize observability once at module load
 
-
-# Now import and register tasks
-
-
-# Database functions (keep these)
+# Database functions
 def get_unsent_messages():
     """Get unsent emails from database"""
     try:
@@ -108,8 +105,8 @@ def log_error_sync(error_data):
     finally:
         db.close()
 
-# TASK DEFINITIONS - MUST use @app.task decorator
-@app.task(bind=True, max_retries=3, default_retry_delay=30, queue ='datagemail-queue')
+# TASK DEFINITIONS
+@app.task(bind=True, max_retries=3, default_retry_delay=30)
 @trace_task
 @profile_task
 def scrape_unsent_emails(self):
@@ -149,14 +146,12 @@ def scrape_unsent_emails(self):
                     
                     if email['has_file'] == 1:
                         result = send_email_with_file.apply_async(
-                            args=[email],
-                            queue='datagemail-queue'
+                            args=[email]
                         )
                         message, status = result.get(timeout=300)
                     else:
                         result = send_email.apply_async(
-                            args=[email],
-                            queue='datagemail-queue'
+                            args=[email]
                         )
                         message, status = result.get(timeout=300)
                     
@@ -206,7 +201,7 @@ def scrape_unsent_emails(self):
         log_error_sync(error_data)
         raise self.retry(exc=exc)
 
-@app.task(bind=True, max_retries=3, default_retry_delay=60, queue='datagemail-queue')
+@app.task(bind=True, max_retries=3, default_retry_delay=60)
 @trace_task
 @profile_task
 def send_email(self, email_data):
@@ -287,7 +282,7 @@ def send_email(self, email_data):
         except MaxRetriesExceededError:
             return str(exc), False
 
-@app.task(bind=True, max_retries=3, default_retry_delay=60, queue='datagemail-queue')
+@app.task(bind=True, max_retries=3, default_retry_delay=60)
 @trace_task
 @profile_task
 def send_email_with_file(self, email_data):
@@ -381,5 +376,3 @@ def health_check():
     """Simple health check task"""
     logger.info("Health check - Celery is running")
     return "OK"
-
-# Explicitly register tasks

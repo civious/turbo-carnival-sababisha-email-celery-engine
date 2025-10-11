@@ -30,7 +30,7 @@ class LokiLogHandler(logging.Handler):
             labels.update({
                 "level": record.levelname,
                 "service": getattr(record, "service", "unknown"),
-                "task_id": getattr(record, "task_id", "unknown"),
+                "task_ref": getattr(record, "task_ref", "unknown"),  # renamed
             })
 
             payload = {
@@ -68,7 +68,7 @@ class ObservabilityLogger:
         self.logger.setLevel(logging.INFO)
 
         formatter = jsonlogger.JsonFormatter(
-            "%(asctime)s %(name)s %(levelname)s %(message)s %(service)s %(task_id)s"
+            "%(asctime)s %(name)s %(levelname)s %(message)s %(service)s %(task_ref)s"
         )
 
         # Console handler
@@ -99,19 +99,19 @@ class ObservabilityLogger:
         def record_factory(*args, **kwargs):
             record = old_factory(*args, **kwargs)
             record.service = "email-service"
-            record.task_id = "unknown"
+            record.task_ref = "unknown"   # renamed
             return record
 
         logging.setLogRecordFactory(record_factory)
         return logger
 
-    def set_task_id(self, task_id):
+    def set_task_ref(self, task_ref):
         old_factory = logging.getLogRecordFactory()
 
         def record_factory(*args, **kwargs):
             record = old_factory(*args, **kwargs)
             record.service = "email-service"
-            record.task_id = task_id
+            record.task_ref = task_ref   # renamed
             return record
 
         logging.setLogRecordFactory(record_factory)

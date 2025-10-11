@@ -52,8 +52,6 @@ app.conf.update(
     # Queue routing
     task_routes={
         'tasks.scrape_unsent_emails': {'queue': 'datagemail-queue'},
-        'tasks.send_email': {'queue': 'datagemail-queue'},
-        'tasks.send_email_with_file': {'queue': 'datagemail-queue'},
         'tasks.log_error': {'queue': 'log-queue'},
         'tasks.health_check': {'queue': 'log-queue'},
     },

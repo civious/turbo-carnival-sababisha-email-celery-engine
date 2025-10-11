@@ -144,25 +144,15 @@ def scrape_unsent_emails(self):
                         'recipient': email['email']
                     })
                     
-                    # FIX: Use the actual Celery task objects, not function references
                     if email['has_file'] == 1:
-                        # Use send_email_with_file task (the Celery task object)
-                        from celery_config import app
-                        result = app.send_task(
-                            'tasks.send_email_with_file',
-                            args=[email],
-                            queue='datagemail-queue'
+                        result = send_email_with_file(
                         )
-                        message, status = result.get(timeout=300)
+                        message, status = result
                     else:
-                        # Use send_email task (the Celery task object)
-                        from celery_config import app
-                        result = app.send_task(
-                            'tasks.send_email',
-                            args=[email],
-                            queue='datagemail-queue'
+                        result = send_email(
+                            email
                         )
-                        message, status = result.get(timeout=300)
+                        message, status = result
                     
                     if status:
                         mark_sent(email['id'])
@@ -209,9 +199,9 @@ def scrape_unsent_emails(self):
         }
         log_error_sync(error_data)
         raise self.retry(exc=exc)
+
 @trace_task
 @profile_task
-@app.task(bind=True, max_retries=3, default_retry_delay=60)
 def send_email(self, email_data):
     """Send email without attachment"""
     task_id = self.request.id
@@ -285,13 +275,9 @@ def send_email(self, email_data):
         }
         log_error_sync(error_data)
         
-        try:
-            raise self.retry(exc=exc, countdown=60)
-        except MaxRetriesExceededError:
-            return str(exc), False
+       
 @trace_task
 @profile_task
-@app.task(bind=True, max_retries=3, default_retry_delay=60)
 def send_email_with_file(self, email_data):
     """Send email with attachment"""
     task_id = self.request.id
@@ -365,11 +351,7 @@ def send_email_with_file(self, email_data):
             'occured_at': datetime.now().isoformat()
         }
         log_error_sync(error_data)
-        
-        try:
-            raise self.retry(exc=exc, countdown=60)
-        except MaxRetriesExceededError:
-            return str(exc), False
+
 @trace_task
 @profile_task
 @app.task

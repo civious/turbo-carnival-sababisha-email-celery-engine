@@ -6,7 +6,7 @@ set -e
 # Define paths and defaults
 VENV_PATH="/root/projects/DataGCeleryJobs/venv/bin"
 APP_PATH="/root/projects/DataGCeleryJobs"
-CELERY_APP="email_tasks:app"
+CELERY_APP="celery_config:app"
 WORKER_CONCURRENCY="${WORKER_CONCURRENCY:-2}"
 LOG_LEVEL="${LOG_LEVEL:-info}"
 LOG_FILE="${LOG_FILE:-/var/log/celery/%n%I.log}"

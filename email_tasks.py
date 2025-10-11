@@ -14,7 +14,7 @@ from sqlalchemy import text
 # Import safe observability
 from loki_loghandler import logger
 from profiling import profile_task
-from tracing import get_tracer
+from tracing import get_tracer, trace_task
 from database import SessionLocal
 from models import OutEmail, ErrorLogs
 from celery_config import app
@@ -110,7 +110,7 @@ def log_error_sync(error_data):
 
 # TASK DEFINITIONS - MUST use @app.task decorator
 @app.task(bind=True, max_retries=3, default_retry_delay=30, queue ='datagemail-queue')
-@get_tracer
+@trace_task
 @profile_task
 def scrape_unsent_emails(self):
     """Process unsent emails with observability"""
@@ -207,7 +207,7 @@ def scrape_unsent_emails(self):
         raise self.retry(exc=exc)
 
 @app.task(bind=True, max_retries=3, default_retry_delay=60, queue='datagemail-queue')
-@get_tracer
+@trace_task
 @profile_task
 def send_email(self, email_data):
     """Send email without attachment"""
@@ -288,7 +288,7 @@ def send_email(self, email_data):
             return str(exc), False
 
 @app.task(bind=True, max_retries=3, default_retry_delay=60, queue='datagemail-queue')
-@get_tracer
+@trace_task
 @profile_task
 def send_email_with_file(self, email_data):
     """Send email with attachment"""
@@ -370,7 +370,7 @@ def send_email_with_file(self, email_data):
             return str(exc), False
 
 @app.task
-@get_tracer
+@trace_task
 def log_error(error_data):
     """Task for logging errors"""
     log_error_sync(error_data)

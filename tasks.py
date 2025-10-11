@@ -145,11 +145,11 @@ def scrape_unsent_emails(self):
                     })
                     
                     if email['has_file'] == 1:
-                        result = send_email_with_file(
+                        result = send_email_with_file(task_id,email
                         )
                         message, status = result
                     else:
-                        result = send_email(
+                        result = send_email(task_id,
                             email
                         )
                         message, status = result
@@ -202,9 +202,8 @@ def scrape_unsent_emails(self):
 
 @trace_task
 @profile_task
-def send_email(self, email_data):
+def send_email(task_id, email_data):
     """Send email without attachment"""
-    task_id = self.request.id
     logger.set_task_ref(task_id)
     
     logger.info("Sending email", extra={
@@ -278,9 +277,8 @@ def send_email(self, email_data):
        
 @trace_task
 @profile_task
-def send_email_with_file(self, email_data):
+def send_email_with_file(task_id, email_data):
     """Send email with attachment"""
-    task_id = self.request.id
     logger.set_task_ref(task_id)
     
     logger.info("Sending email with attachment", extra={

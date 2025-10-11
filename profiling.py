@@ -22,7 +22,6 @@ def setup_pyroscope():
             detect_subprocesses=True,
             oncpu=True,
             native=True,
-            logging_level="info",
         )
         print("✅ Pyroscope profiling initialized")
     except Exception as e:

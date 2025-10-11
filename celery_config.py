@@ -24,6 +24,7 @@ app = Celery(
     'email_service',
     broker=redis_url,
     backend=redis_url,
+    include=['tasks'],  # This tells Celery to import tasks
     broker_connection_retry_on_startup=True
 )
 
@@ -105,5 +106,3 @@ def get_redis_connection():
     except Exception as e:
         logger.error(f"Failed to connect to Redis: {e}")
         raise
-
-app.autodiscover_tasks()

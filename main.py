@@ -6,10 +6,11 @@ import time
 from dotenv import load_dotenv
 from sqlalchemy import text
 from celery_config import app
+from tracing import setup_tracing
 
 # Load environment variables
 load_dotenv()
-
+setup_tracing()
 # Configure logging
 from loki_loghandler import logger
 
@@ -292,11 +293,11 @@ def main():
         return
     
     tests = [
-        # ("Redis Connection", test_redis_connection),
-        # ("Database Connection", test_database_connection),
+        ("Redis Connection", test_redis_connection),
+        ("Database Connection", test_database_connection),
         ("Unsent Emails Query", test_unsent_emails_query),
-        # ("Celery Task Submission", test_celery_task_submission),
-        # ("Email Sending Dry Run", test_email_sending_dry_run),
+        ("Celery Task Submission", test_celery_task_submission),
+        ("Email Sending Dry Run", test_email_sending_dry_run),
     ]
     
     results = []

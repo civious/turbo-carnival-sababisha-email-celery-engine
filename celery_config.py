@@ -1,8 +1,10 @@
 from celery import Celery
 from celery.schedules import crontab
 import os
+from dotenv import load_dotenv
 import redis
 from loki_loghandler import logger
+load_dotenv()
 
 # Parse Redis URL with password
 

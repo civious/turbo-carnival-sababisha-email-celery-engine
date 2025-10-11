@@ -141,7 +141,7 @@ def test_database_connection():
 def test_unsent_emails_query():
     """Test the unsent emails query"""
     try:
-        from email_tasks import get_unsent_messages
+        from tasks import get_unsent_messages
         
         logger.info("Testing unsent emails query...")
         emails = get_unsent_messages()
@@ -163,7 +163,7 @@ def test_unsent_emails_query():
 def test_celery_task_submission():
     """Test submitting actual tasks to Celery"""
     try:
-        from email_tasks import app, log_error
+        from tasks import app, log_error
         
         logger.info("Testing Celery task submission...")
         
@@ -190,7 +190,7 @@ def test_celery_task_submission():
             return False
         
         # Test if we can submit to the email queue (without waiting for completion)
-        from email_tasks import scrape_unsent_emails
+        from tasks import scrape_unsent_emails
         email_task = scrape_unsent_emails.apply_async(queue='datagemail-queue')
         logger.info(f"✅ Email task submitted successfully: {email_task.id}")
         
@@ -323,9 +323,9 @@ def main():
     if passed == total:
         print("🎉 All tests passed! You can start Celery workers.")
         print("\nTo start workers, run:")
-        print("  celery -A email_tasks worker --queues=datagemail-queue --concurrency=4 --loglevel=info")
-        print("  celery -A email_tasks worker --queues=log-queue --concurrency=2 --loglevel=info") 
-        print("  celery -A email_tasks beat --loglevel=info")
+        print("  celery -A tasks worker --queues=datagemail-queue --concurrency=4 --loglevel=info")
+        print("  celery -A tasks worker --queues=log-queue --concurrency=2 --loglevel=info") 
+        print("  celery -A tasks beat --loglevel=info")
     else:
         print("❌ Some tests failed. Please check the logs above.")
         print("\nFailed tests:")

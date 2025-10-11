@@ -113,7 +113,7 @@ status() {
     
     echo -e "\n1. Process Check (with better detection):"
     # Use multiple patterns to catch all Celery processes
-    CELERY_PROCESSES=$(ps aux | grep -E "(celery|python.*celery|email_tasks)" | grep -v grep || true)
+    CELERY_PROCESSES=$(ps aux | grep -E "(celery|python.*celery|tasks)" | grep -v grep || true)
     
     if [ -n "$CELERY_PROCESSES" ]; then
         echo "✅ Celery processes found:"

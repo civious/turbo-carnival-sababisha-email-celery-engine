@@ -24,7 +24,6 @@ app = Celery(
     'email_service',
     broker=redis_url,
     backend=redis_url,
-    include=['email_tasks'],  # This tells Celery to import email_tasks
     broker_connection_retry_on_startup=True
 )
 
@@ -47,17 +46,17 @@ app.conf.update(
     
     # Queue routing
     task_routes={
-        'email_tasks.scrape_unsent_emails': {'queue': 'datagemail-queue'},
-        'email_tasks.send_email': {'queue': 'datagemail-queue'},
-        'email_tasks.send_email_with_file': {'queue': 'datagemail-queue'},
-        'email_tasks.log_error': {'queue': 'log-queue'},
-        'email_tasks.health_check': {'queue': 'log-queue'},
+        'tasks.scrape_unsent_emails': {'queue': 'datagemail-queue'},
+        'tasks.send_email': {'queue': 'datagemail-queue'},
+        'tasks.send_email_with_file': {'queue': 'datagemail-queue'},
+        'tasks.log_error': {'queue': 'log-queue'},
+        'tasks.health_check': {'queue': 'log-queue'},
     },
     
     # Rate limiting
     task_annotations={
-        'email_tasks.scrape_unsent_emails': {'rate_limit': '10/m'},
-        'email_tasks.send_email': {'rate_limit': '30/m'},
+        'tasks.scrape_unsent_emails': {'rate_limit': '10/m'},
+        'tasks.send_email': {'rate_limit': '30/m'},
     },
     
     # Retry settings
@@ -79,7 +78,7 @@ app.conf.update(
 # Beat Schedule for periodic tasks
 app.conf.beat_schedule = {
     'scrape-unsent-emails-every-30-seconds': {
-        'task': 'email_tasks.scrape_unsent_emails',
+        'task': 'tasks.scrape_unsent_emails',
         'schedule': 30.0,  # Changed to 30 seconds as requested
         'options': {'queue': 'datagemail-queue'}
     },
@@ -106,3 +105,5 @@ def get_redis_connection():
     except Exception as e:
         logger.error(f"Failed to connect to Redis: {e}")
         raise
+
+app.autodiscover_tasks()

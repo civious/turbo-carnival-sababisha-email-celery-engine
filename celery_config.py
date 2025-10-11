@@ -4,8 +4,12 @@ import os
 from dotenv import load_dotenv
 import redis
 from loki_loghandler import logger
+from profiling import setup_pyroscope
+from tracing import setup_tracing
 
 load_dotenv()
+setup_tracing()
+setup_pyroscope()
 
 # Parse Redis URL with password
 redis_host = os.getenv('REDIS_HOST', 'localhost')

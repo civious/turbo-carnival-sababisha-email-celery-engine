@@ -13,14 +13,14 @@ from sqlalchemy import text
 
 # Import observability modules
 from loki_loghandler import logger
-# from profiling import profile_task
+from profiling import profile_task, setup_pyroscope
 from tracing import trace_task, setup_tracing, get_tracer
 from database import SessionLocal
 from models import OutEmail, ErrorLogs
 from celery_config import app
 
 # Initialize observability
-# setup_pyroscope()
+setup_pyroscope()
 tracer_provider = setup_tracing()
 
 
@@ -59,7 +59,7 @@ def mark_failed(email_id: int, reason: str):
         db.close()
 
 @app.task(bind=True, max_retries=3, default_retry_delay=30)
-#@profile_task
+@profile_task
 @trace_task
 def scrape_unsent_emails(self):
     """Process unsent emails with observability"""
@@ -154,7 +154,7 @@ def scrape_unsent_emails(self):
         raise self.retry(exc=exc)
 
 @app.task(bind=True, max_retries=3, default_retry_delay=60)
-#@profile_task
+@profile_task
 @trace_task
 def send_email(self, email_data):
     """Send email without attachment with observability"""
@@ -241,7 +241,7 @@ def send_email(self, email_data):
 
 # Similar decorators for send_email_with_file
 @app.task(bind=True, max_retries=3, default_retry_delay=60)
-#@profile_task
+@profile_task
 @trace_task
 def send_email_with_file(self, email_data):
     """Send email with attachment - with observability"""

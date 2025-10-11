@@ -106,9 +106,9 @@ def log_error_sync(error_data):
         db.close()
 
 # TASK DEFINITIONS
-@app.task(bind=True, max_retries=3, default_retry_delay=30)
 @trace_task
 @profile_task
+@app.task(bind=True, max_retries=3, default_retry_delay=30)
 def scrape_unsent_emails(self):
     """Process unsent emails with observability"""
     task_id = self.request.id
@@ -201,9 +201,9 @@ def scrape_unsent_emails(self):
         log_error_sync(error_data)
         raise self.retry(exc=exc)
 
-@app.task(bind=True, max_retries=3, default_retry_delay=60)
 @trace_task
 @profile_task
+@app.task(bind=True, max_retries=3, default_retry_delay=60)
 def send_email(self, email_data):
     """Send email without attachment"""
     task_id = self.request.id
@@ -281,10 +281,9 @@ def send_email(self, email_data):
             raise self.retry(exc=exc, countdown=60)
         except MaxRetriesExceededError:
             return str(exc), False
-
-@app.task(bind=True, max_retries=3, default_retry_delay=60)
 @trace_task
 @profile_task
+@app.task(bind=True, max_retries=3, default_retry_delay=60)
 def send_email_with_file(self, email_data):
     """Send email with attachment"""
     task_id = self.request.id

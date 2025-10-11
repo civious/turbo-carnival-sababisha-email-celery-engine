@@ -112,7 +112,7 @@ def log_error_sync(error_data):
 def scrape_unsent_emails(self):
     """Process unsent emails with observability"""
     task_id = self.request.id
-    logger.set_task_id(task_id)
+    logger.set_task_ref(task_id)
     
     tracer = get_tracer()
     
@@ -207,7 +207,7 @@ def scrape_unsent_emails(self):
 def send_email(self, email_data):
     """Send email without attachment"""
     task_id = self.request.id
-    logger.set_task_id(task_id)
+    logger.set_task_ref(task_id)
     
     logger.info("Sending email", extra={
         'task_id': task_id,
@@ -287,7 +287,7 @@ def send_email(self, email_data):
 def send_email_with_file(self, email_data):
     """Send email with attachment"""
     task_id = self.request.id
-    logger.set_task_id(task_id)
+    logger.set_task_ref(task_id)
     
     logger.info("Sending email with attachment", extra={
         'task_id': task_id,

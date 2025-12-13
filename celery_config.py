@@ -51,7 +51,7 @@ app.conf.update(
     
     # Queue routing
     task_routes={
-        'tasks.scrape_unsent_emails': {'queue': 'datagemail-queue'},
+        'tasks.scrape_unsent_emails': {'queue': 'celery'},
         'tasks.log_error': {'queue': 'log-queue'},
         'tasks.health_check': {'queue': 'log-queue'},
     },
@@ -83,7 +83,7 @@ app.conf.beat_schedule = {
     'scrape-unsent-emails-every-30-seconds': {
         'task': 'tasks.scrape_unsent_emails',
         'schedule': 30.0,  # Changed to 30 seconds as requested
-        'options': {'queue': 'datagemail-queue'}
+        'options': {'queue': 'celery'}
     },
 }
 

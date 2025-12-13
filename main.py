@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from sqlalchemy import text
 from celery_config import app
 from tracing import setup_tracing
-
+from tasks import scrape_unsent_emails
 # Load environment variables
 load_dotenv()
 setup_tracing()
@@ -45,8 +45,8 @@ def test_redis_connection():
                     port=redis_port,
                     password=redis_password,
                     db=redis_db,
-                    socket_connect_timeout=5,
-                    socket_timeout=5,
+                    socket_connect_timeout=50,
+                    socket_timeout=50,
                     retry_on_timeout=True
                 )
             else:
@@ -54,8 +54,8 @@ def test_redis_connection():
                     host=redis_host,
                     port=redis_port,
                     db=redis_db,
-                    socket_connect_timeout=5,
-                    socket_timeout=5
+                    socket_connect_timeout=50,
+                    socket_timeout=50
                 )
             
             # Test connection
@@ -339,4 +339,4 @@ def main():
         run_interactive_debugger()
 
 if __name__ == "__main__":
-    main()
+    scrape_unsent_emails()

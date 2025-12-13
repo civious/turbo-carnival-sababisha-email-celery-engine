@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+debug_test.log
+logs/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Environment - NEVER include in image for security
+.env
+.env.*
+!.env.example
+
+# Test files
+debug_celery.py
+test_*.py
+
+# Documentation
+README.md
+*.md

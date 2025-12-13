@@ -20,32 +20,61 @@ from profiling import profile_task
 from tracing import get_tracer, trace_task
 from database import SessionLocal
 from models import OutEmail, ErrorLogs
-
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
+import base64
 # Database functions
 def get_unsent_messages():
     """Get unsent emails from database"""
     try:
         db = SessionLocal()
         query = text("""
-            SELECT id, email, subject, msg, hasfile, filetobesent, documentname, retries
-            FROM OutEmail 
-            WHERE issent = 0 AND retries < 3
+             SELECT messageid, emaildisplayname,emailclientportnumber,encrypted,recipientemail,
+            subject, body, contactemailpassword, contactemail,retries,subjecttitle
+            FROM pos_shoes.dbo.unsentemailscraper
+
         """)
-        
+
         result = db.execute(query)
         emails = []
+        encryption_key = os.getenv('ENCRYPTION_KEY', '')
+
         for row in result:
+            contact_password = row.contactemailpassword
+            recipient_email = row.recipientemail
+
+            # Password is ALWAYS encrypted - always decrypt it
+            if contact_password and encryption_key:
+                try:
+                    contact_password = decrypt_data(contact_password, encryption_key)
+                    logger.info(f"Decrypted password for email {row.messageid}")
+                except Exception as decrypt_error:
+                    logger.error(f"Failed to decrypt password for email {row.messageid}: {decrypt_error}")
+                    # Keep encrypted password if decryption fails
+
+            # Recipient email is only encrypted when encrypted flag = 1
+            if row.encrypted == 1 and recipient_email and encryption_key:
+                try:
+                    recipient_email = decrypt_data(recipient_email, encryption_key)
+                    logger.info(f"Decrypted recipient email for email {row.messageid}")
+                except Exception as decrypt_error:
+                    logger.error(f"Failed to decrypt recipient email for email {row.messageid}: {decrypt_error}")
+                    # Keep encrypted recipient email if decryption fails
+
             emails.append({
-                'id': row.id,
-                'email': row.email,
+                'id': row.messageid,
+                'recipient': recipient_email,
                 'subject': row.subject,
-                'msg': row.msg,
-                'has_file': row.hasfile,
-                'file_to_be_sent': row.filetobesent,
-                'document_name': row.documentname,
-                'retries': row.retries
+                'body': row.body,
+                'emaildisplayname': row.emaildisplayname,
+                'emailclientportnumber': row.emailclientportnumber,
+                'retries': row.retries,
+                'encrypted': row.encrypted,
+                'contactemailpassword': contact_password,
+                'contactemail': row.contactemail,
+                'subjecttitle': row.subjecttitle
             })
-        
+
         return emails
     except Exception as e:
         logger.error(f"Error fetching unsent messages: {e}")
@@ -58,7 +87,7 @@ def mark_sent(email_id: int):
     try:
         db = SessionLocal()
         db.execute(
-            text("UPDATE OutEmail SET issent = 1 WHERE id = :id"),
+            text("UPDATE emailmessages SET statusflag = 1, status = 'SENT' WHERE messageid = :id"),
             {'id': email_id}
         )
         db.commit()
@@ -75,7 +104,7 @@ def mark_failed(email_id: int, reason: str):
         db.execute(
             text("""
                 UPDATE OutEmail 
-                SET retries = retries + 1, failedreason = :reason 
+                SET retries = retries + 1,status='FAILED',  failedreason = :reason 
                 WHERE id = :id
             """),
             {'id': email_id, 'reason': reason}
@@ -135,24 +164,18 @@ def scrape_unsent_emails(self):
             try:
                 with tracer.start_as_current_span("process_email") as span:
                     span.set_attribute("email.id", email['id'])
-                    span.set_attribute("email.recipient", email['email'])
-                    span.set_attribute("email.has_file", email['has_file'])
+                    span.set_attribute("email.recipient", email['recipient'])
                     
                     logger.info(f"Processing email {email['id']}", extra={
                         'task_id': task_id,
                         'email_id': email['id'],
-                        'recipient': email['email']
+                        'recipient': email['recipient']
                     })
                     
-                    if email['has_file'] == 1:
-                        result = send_email_with_file(task_id,email
-                        )
-                        message, status = result
-                    else:
-                        result = send_email(task_id,
-                            email
-                        )
-                        message, status = result
+                    
+                    result = send_email(task_id,
+                            email)
+                    message, status = result
                     
                     if status:
                         mark_sent(email['id'])
@@ -209,24 +232,36 @@ def send_email(task_id, email_data):
     logger.info("Sending email", extra={
         'task_id': task_id,
         'email_id': email_data.get('id'),
-        'recipient': email_data.get('email'),
+        'recipient': email_data.get('recepient'),
         'operation': 'send_email'
     })
     
     try:
         # Your email sending logic here
         message = MIMEMultipart()
-        message['From'] = 'Data G <datag@datag.co.ke>'
-        message['To'] = email_data['email']
+        message['From'] = f'{email_data["emaildisplayname"]} <{email_data["contactemail"]}>'
+        message['To'] = email_data['recipient']
         message['Subject'] = email_data['subject']
         
-        # Add HTML body with logo
+        # Add HTML body with logo and footer
         html_body = f"""
         <html>
             <body>
-                {email_data['msg']}
-                <br>
-                <img src="cid:logo" width="120" height="100">
+                {email_data['body']}
+                <br><br>
+                <hr style="border: none; border-top: 2px solid #e0e0e0; margin: 20px 0;">
+                <table style="font-family: Arial, sans-serif; color: #333;">
+                    <tr>
+                        <td style="vertical-align: middle; padding-right: 20px;">
+                            <img src="cid:logo" width="120" height="100" alt="Company Logo">
+                        </td>
+                        <td style="vertical-align: middle;">
+                            <p style="margin: 5px 0; font-size: 14px;"><strong>For support, contact:</strong></p>
+                            <p style="margin: 5px 0; font-size: 14px;">Civious Rumaita</p>
+                            <p style="margin: 5px 0; font-size: 14px;">Phone: <a href="tel:+254715088150" style="color: #0066cc; text-decoration: none;">0715088150</a></p>
+                        </td>
+                    </tr>
+                </table>
             </body>
         </html>
         """
@@ -246,9 +281,24 @@ def send_email(task_id, email_data):
             logo_attachment.add_header('Content-Disposition', 'inline', filename='logo.png')
             message.attach(logo_attachment)
         
+        # Extract SMTP server from contactemail domain
+        smtp_server = email_data['contactemail'].split('@')[1] if '@' in email_data['contactemail'] else 'mail.sababisha.com'
+        # Prepend 'mail.' if not already present
+        if not smtp_server.startswith('mail.'):
+            smtp_server = f'mail.{smtp_server}'
+
+        smtp_port = int(email_data.get('emailclientportnumber', 465))
+
+        logger.info(f"Attempting SMTP connection to {smtp_server}:{smtp_port} with user {email_data['contactemail']}", extra={
+            'task_id': task_id,
+            'smtp_server': smtp_server,
+            'smtp_port': smtp_port,
+            'email_user': email_data['contactemail']
+        })
+
         # Send email
-        with smtplib.SMTP_SSL('mail.datag.co.ke', 465) as server:
-            server.login('datag@datag.co.ke',  os.getenv('SMTP_PASSWORD'))
+        with smtplib.SMTP_SSL(smtp_server, smtp_port) as server:
+            server.login(email_data['contactemail'], email_data['contactemailpassword'])
             server.send_message(message)
         
         logger.info("Email sent successfully", extra={
@@ -356,6 +406,57 @@ def send_email_with_file(task_id, email_data):
 def log_error(error_data):
     """Task for logging errors"""
     log_error_sync(error_data)
+    
+
+#decrypt data
+def decrypt_data(encrypted_string: str, key: str) -> str:
+    """
+    Decrypt an AES-encrypted string using the provided key.
+    
+    Args:
+        encrypted_string: Base64-encoded string with IV (first 24 chars) + encrypted data
+        key: Encryption key as UTF-8 string
+        
+    Returns:
+        Decrypted plaintext string
+        
+    Raises:
+        ValueError: If encrypted_string or key is None or empty
+    """
+    # Validate the input string and key
+    if not encrypted_string:
+        raise ValueError("The encrypted string cannot be null or empty.")
+    if not key:
+        raise ValueError("The encryption key cannot be null or empty.")
+    
+    # Split the encrypted string into the IV and encrypted data
+    iv_string = encrypted_string[:24]
+    encrypted_data_string = encrypted_string[24:]
+    
+    # Convert the IV and encrypted data from Base64 to binary
+    iv = base64.b64decode(iv_string)
+    encrypted_data = base64.b64decode(encrypted_data_string)
+    
+    # Convert key to bytes
+    key_bytes = key.encode('utf-8')
+    
+    # Create AES cipher in CBC mode
+    cipher = Cipher(
+        algorithms.AES(key_bytes),
+        modes.CBC(iv),
+        backend=default_backend()
+    )
+    
+    # Decrypt the data
+    decryptor = cipher.decryptor()
+    decrypted_padded = decryptor.update(encrypted_data) + decryptor.finalize()
+    
+    # Remove PKCS7 padding
+    padding_length = decrypted_padded[-1]
+    decrypted_data = decrypted_padded[:-padding_length]
+    
+    # Convert bytes to string
+    return decrypted_data.decode('utf-8')
 
 # Health check task
 @app.task
@@ -363,3 +464,7 @@ def health_check():
     """Simple health check task"""
     logger.info("Health check - Celery is running")
     return "OK"
+
+
+if __name__ == "__main__":
+    scrape_unsent_emails()

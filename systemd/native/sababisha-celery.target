@@ -1,0 +1,7 @@
+[Unit]
+Description=Sababisha Celery Email Service (All Services - Native)
+Requires=sababisha-celery-beat.service sababisha-celery-worker.service sababisha-celery-log-worker.service
+After=network.target redis.service
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,28 @@
+[Unit]
+Description=Sababisha Celery Log Worker (Native)
+After=network.target redis.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/sababisha-celery
+
+# Activate virtual environment and run celery worker
+ExecStart=/opt/sababisha-celery/venv/bin/celery -A celery_config:app worker --queues=log-queue --concurrency=1 --hostname=log_worker@%%h --loglevel=info
+
+# Environment variables (load from .env)
+EnvironmentFile=/opt/sababisha-celery/.env
+
+# Restart policy
+Restart=always
+RestartSec=10
+StartLimitInterval=0
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=sababisha-celery-log-worker
+
+[Install]
+WantedBy=multi-user.target

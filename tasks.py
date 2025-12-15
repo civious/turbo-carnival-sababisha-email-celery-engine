@@ -88,7 +88,7 @@ def mark_sent(email_id: int):
         db = SessionLocal()
         # Update the emailmessages table
         result = db.execute(
-            text("UPDATE emailmessages SET statusflag = 1, status = 'SENT', datecreated = GETDATE() WHERE messageid = :id"),
+            text("UPDATE emailmessages SET statusflag = 1, status = 'SENT' WHERE messageid = :id"),
             {'id': email_id}
         )
         db.commit()
@@ -265,7 +265,7 @@ def send_email(task_id, email_data):
                         </td>
                         <td style="vertical-align: middle;">
                             <p style="margin: 5px 0; font-size: 14px;"><strong>For support, contact:</strong></p>
-                            <p style="margin: 5px 0; font-size: 14px;">Civious Rumaita</p>
+                            <p style="margin: 5px 0; font-size: 14px;">Civious Rumaitaa</p>
                             <p style="margin: 5px 0; font-size: 14px;">Phone: <a href="tel:+254715088150" style="color: #0066cc; text-decoration: none;">0715088150</a></p>
                         </td>
                     </tr>
@@ -474,5 +474,5 @@ def health_check():
     return "OK"
 
 
-# if __name__ == "__main__":
-#     scrape_unsent_emails()
+if __name__ == "__main__":
+    scrape_unsent_emails()

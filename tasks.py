@@ -466,5 +466,5 @@ def health_check():
     return "OK"
 
 
-if __name__ == "__main__":
-    scrape_unsent_emails()
+# if __name__ == "__main__":
+#     scrape_unsent_emails()

@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3:*)",
+      "Bash(pip3 list:*)",
+      "Bash(./venv/bin/python3:*)",
+      "Bash(./venv/bin/pip freeze:*)",
+      "Bash(./venv/bin/celery:*)"
+    ]
+  }
+}

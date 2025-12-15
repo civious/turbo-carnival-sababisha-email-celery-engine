@@ -86,11 +86,19 @@ def mark_sent(email_id: int):
     """Mark email as sent"""
     try:
         db = SessionLocal()
-        db.execute(
-            text("UPDATE emailmessages SET statusflag = 1, status = 'SENT' WHERE messageid = :id"),
+        # Update the emailmessages table
+        result = db.execute(
+            text("UPDATE emailmessages SET statusflag = 1, status = 'SENT', datecreated = GETDATE() WHERE messageid = :id"),
             {'id': email_id}
         )
         db.commit()
+
+        rows_affected = result.rowcount
+        if rows_affected > 0:
+            logger.info(f"Marked email {email_id} as sent ({rows_affected} rows updated)")
+        else:
+            logger.warning(f"No rows updated for email {email_id} - email may not exist or already marked")
+
     except Exception as e:
         logger.error(f"Error marking email {email_id} as sent: {e}")
         db.rollback()

@@ -84,14 +84,21 @@ def get_unsent_messages():
 
 def mark_sent(email_id: int):
     """Mark email as sent"""
+    db = None
     try:
         db = SessionLocal()
+
+        # Use raw connection with explicit transaction
+        connection = db.connection()
+
         # Update the emailmessages table
-        result = db.execute(
+        result = connection.execute(
             text("UPDATE emailmessages SET statusflag = 1, status = 'SENT' WHERE messageid = :id"),
             {'id': email_id}
         )
-        db.commit()
+
+        # Explicitly commit the transaction
+        connection.commit()
 
         rows_affected = result.rowcount
         if rows_affected > 0:
@@ -100,29 +107,50 @@ def mark_sent(email_id: int):
             logger.warning(f"No rows updated for email {email_id} - email may not exist or already marked")
 
     except Exception as e:
-        logger.error(f"Error marking email {email_id} as sent: {e}")
-        db.rollback()
+        logger.error(f"Error marking email {email_id} as sent: {e}", exc_info=True)
+        if db:
+            try:
+                db.connection().rollback()
+            except:
+                pass
     finally:
-        db.close()
+        if db:
+            db.close()
 
 def mark_failed(email_id: int, reason: str):
     """Mark email as failed and increment retries"""
+    db = None
     try:
         db = SessionLocal()
-        db.execute(
+
+        # Use raw connection with explicit transaction
+        connection = db.connection()
+
+        result = connection.execute(
             text("""
-                UPDATE emailmessages 
-                SET retries = retries + 1,status='FAILED',  failedreason = :reason 
+                UPDATE emailmessages
+                SET retries = retries + 1,status='FAILED',  failedreason = :reason
                 WHERE messageid = :id
             """),
             {'id': email_id, 'reason': reason}
         )
-        db.commit()
+
+        # Explicitly commit the transaction
+        connection.commit()
+
+        rows_affected = result.rowcount
+        logger.info(f"Marked email {email_id} as failed ({rows_affected} rows updated)")
+
     except Exception as e:
-        logger.error(f"Error marking email {email_id} as failed: {e}")
-        db.rollback()
+        logger.error(f"Error marking email {email_id} as failed: {e}", exc_info=True)
+        if db:
+            try:
+                db.connection().rollback()
+            except:
+                pass
     finally:
-        db.close()
+        if db:
+            db.close()
 
 def log_error_sync(error_data):
     """Synchronous error logging"""

@@ -1,0 +1,26 @@
+[Unit]
+Description=Sababisha Celery Beat Scheduler
+After=network.target redis.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/sababisha-celery
+Environment="PATH=/opt/sababisha-celery/venv/bin"
+
+# Use docker-compose to run beat
+ExecStart=/usr/local/bin/docker-compose -f /opt/sababisha-celery/docker-compose.yml up celery-beat
+ExecStop=/usr/local/bin/docker-compose -f /opt/sababisha-celery/docker-compose.yml stop celery-beat
+
+# Restart policy
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=sababisha-celery-beat
+
+[Install]
+WantedBy=multi-user.target

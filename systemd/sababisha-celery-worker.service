@@ -1,0 +1,26 @@
+[Unit]
+Description=Sababisha Celery Email Worker
+After=network.target redis.service sababisha-celery-beat.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/sababisha-celery
+Environment="PATH=/opt/sababisha-celery/venv/bin"
+
+# Use docker-compose to run email worker
+ExecStart=/usr/local/bin/docker-compose -f /opt/sababisha-celery/docker-compose.yml up celery-email-worker
+ExecStop=/usr/local/bin/docker-compose -f /opt/sababisha-celery/docker-compose.yml stop celery-email-worker
+
+# Restart policy
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=sababisha-celery-worker
+
+[Install]
+WantedBy=multi-user.target

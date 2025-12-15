@@ -1,0 +1,22 @@
+[Unit]
+Description=Sababisha Celery Email Service (All Services)
+After=network.target redis.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=root
+Group=root
+WorkingDirectory=/opt/sababisha-celery
+
+# Start all services using docker-compose
+ExecStart=/usr/local/bin/docker-compose -f /opt/sababisha-celery/docker-compose.yml up -d
+ExecStop=/usr/local/bin/docker-compose -f /opt/sababisha-celery/docker-compose.yml down
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=sababisha-celery
+
+[Install]
+WantedBy=multi-user.target

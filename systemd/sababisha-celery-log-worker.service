@@ -1,0 +1,26 @@
+[Unit]
+Description=Sababisha Celery Log Worker
+After=network.target redis.service sababisha-celery-beat.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/sababisha-celery
+Environment="PATH=/opt/sababisha-celery/venv/bin"
+
+# Use docker-compose to run log worker
+ExecStart=/usr/local/bin/docker-compose -f /opt/sababisha-celery/docker-compose.yml up celery-log-worker
+ExecStop=/usr/local/bin/docker-compose -f /opt/sababisha-celery/docker-compose.yml stop celery-log-worker
+
+# Restart policy
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=sababisha-celery-log-worker
+
+[Install]
+WantedBy=multi-user.target

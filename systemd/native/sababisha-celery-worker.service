@@ -9,7 +9,7 @@ Group=root
 WorkingDirectory=/opt/sababisha-celery
 
 # Activate virtual environment and run celery worker
-ExecStart=/opt/sababisha-celery/venv/bin/celery -A celery_config:app worker --queues=celery --concurrency=2 --hostname=email_worker@%%h --loglevel=info
+ExecStart=/opt/sababisha-celery/venv/bin/celery -A celery_config:app worker --queues=celery --concurrency=2 --hostname=email_worker@%%h --loglevel=debug
 
 # Environment variables (load from .env)
 EnvironmentFile=/opt/sababisha-celery/.env

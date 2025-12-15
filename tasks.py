@@ -323,7 +323,7 @@ def send_email(task_id, email_data):
             'email_id': email_data.get('id'),
             'status': 'failed'
         }, exc_info=True)
-        
+
         error_data = {
             'error': str(exc),
             'service': 'EmailService',
@@ -331,8 +331,9 @@ def send_email(task_id, email_data):
             'occured_at': datetime.now().isoformat()
         }
         log_error_sync(error_data)
-        
-       
+
+        return str(exc), False
+
 @trace_task
 @profile_task
 def send_email_with_file(task_id, email_data):
@@ -399,7 +400,7 @@ def send_email_with_file(task_id, email_data):
             'email_id': email_data.get('id'),
             'status': 'failed'
         }, exc_info=True)
-        
+
         error_data = {
             'error': str(exc),
             'service': 'EmailService',
@@ -407,6 +408,8 @@ def send_email_with_file(task_id, email_data):
             'occured_at': datetime.now().isoformat()
         }
         log_error_sync(error_data)
+
+        return str(exc), False
 
 @trace_task
 @profile_task

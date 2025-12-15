@@ -111,9 +111,9 @@ def mark_failed(email_id: int, reason: str):
         db = SessionLocal()
         db.execute(
             text("""
-                UPDATE OutEmail 
+                UPDATE emailmessages 
                 SET retries = retries + 1,status='FAILED',  failedreason = :reason 
-                WHERE id = :id
+                WHERE messageid = :id
             """),
             {'id': email_id, 'reason': reason}
         )
@@ -266,7 +266,7 @@ def send_email(task_id, email_data):
                         <td style="vertical-align: middle;">
                             <p style="margin: 5px 0; font-size: 14px;"><strong>For support, contact:</strong></p>
                             <p style="margin: 5px 0; font-size: 14px;">Civious Rumaitaa</p>
-                            <p style="margin: 5px 0; font-size: 14px;">Phone: <a href="tel:+254715088150" style="color: #0066cc; text-decoration: none;">0715088150</a></p>
+                            <p style="margin: 5px 0; font-size: 14px;">Phone: <a href="tel:+254715088150" style="color: #0066cc; text-decoration: none;">+254715088150</a></p>
                         </td>
                     </tr>
                 </table>

@@ -31,7 +31,7 @@ def get_unsent_messages():
         query = text("""
              SELECT messageid, emaildisplayname,emailclientportnumber,encrypted,recipientemail,
             subject, body, contactemailpassword, contactemail,retries,subjecttitle
-            FROM pos_shoes.dbo.unsentemailscraper
+            FROM dbo.unsentemailscraper
 
         """)
 

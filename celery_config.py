@@ -63,7 +63,7 @@ app.conf.update(
     },
     
     # Retry settings
-    task_default_retry_delay=30,
+    task_default_retry_delay=5,
     task_max_retries=3,
     worker_prefetch_multiplier=1,
     task_acks_late=True,
@@ -82,7 +82,7 @@ app.conf.update(
 app.conf.beat_schedule = {
     'scrape-unsent-emails-every-30-seconds': {
         'task': 'tasks.scrape_unsent_emails',
-        'schedule': 30.0,  # Changed to 30 seconds as requested
+        'schedule': 5.0,  # Changed to 30 seconds as requested
         'options': {'queue': 'celery'}
     },
 }

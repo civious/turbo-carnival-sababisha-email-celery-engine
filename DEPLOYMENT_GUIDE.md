@@ -177,6 +177,8 @@ python3 -c "from sqlalchemy import create_engine; engine = create_engine('mssql+
 # 8. Install systemd services
 cd systemd/native
 sudo ./install-services.sh
+chmod +x install-services.sh
+
 
 # 9. Start services
 sudo systemctl start sababisha-celery.target
@@ -204,7 +206,6 @@ sudo systemctl restart sababisha-celery.target
 sudo systemctl status sababisha-celery-*
 
 # Check individual service status
-sudo systemctl status sababisha-celery-beat
 sudo systemctl status sababisha-celery-worker
 sudo systemctl status sababisha-celery-log-worker
 

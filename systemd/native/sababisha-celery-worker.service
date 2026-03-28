@@ -9,7 +9,7 @@ Group=root
 WorkingDirectory=/opt/sababisha-celery
 
 # Activate virtual environment and run celery worker
-ExecStart=/opt/sababisha-celery/venv/bin/celery -A celery_config:app worker --queues=celery --concurrency=2 --hostname=email_worker@%%h --loglevel=debug
+ExecStart=/opt/sababisha-celery/venv/bin/celery -A celery_config:app worker --queues=celery --concurrency=2 --hostname=email_worker@%%h --loglevel=debug --max-tasks-per-child=500
 
 # Environment variables (load from .env)
 EnvironmentFile=/opt/sababisha-celery/.env
@@ -18,6 +18,10 @@ EnvironmentFile=/opt/sababisha-celery/.env
 Restart=always
 RestartSec=10
 StartLimitInterval=0
+
+# Watchdog: restart if worker is unresponsive for 5 minutes
+WatchdogSec=300
+NotifyAccess=main
 
 # Logging
 StandardOutput=journal

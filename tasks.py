@@ -44,13 +44,13 @@ def get_unsent_messages():
             recipient_email = row.recipientemail
 
             # Password is ALWAYS encrypted - always decrypt it
-            if contact_password and encryption_key:
-                try:
-                    contact_password = decrypt_data(contact_password, encryption_key)
-                    logger.info(f"Decrypted password for email {row.messageid}")
-                except Exception as decrypt_error:
-                    logger.error(f"Failed to decrypt password for email {row.messageid}: {decrypt_error}")
-                    # Keep encrypted password if decryption fails
+            # if contact_password and encryption_key:
+            #     try:
+            #         contact_password = decrypt_data(contact_password, encryption_key)
+            #         logger.info(f"Decrypted password for email {row.messageid}")
+            #     except Exception as decrypt_error:
+            #         logger.error(f"Failed to decrypt password for email {row.messageid}: {decrypt_error}")
+            #         # Keep encrypted password if decryption fails
 
             # Recipient email is only encrypted when encrypted flag = 1
             if row.encrypted == 1 and recipient_email and encryption_key:
@@ -318,7 +318,7 @@ def send_email(task_id, email_data):
             message.attach(logo_attachment)
         
         # Extract SMTP server from contactemail domain
-        smtp_server = email_data['contactemail'].split('@')[1] if '@' in email_data['contactemail'] else 'mail.sababisha.com'
+        smtp_server = email_data['contactemail'].split('@')[1] if '@' in email_data['contactemail'] else 'mail.mcb.co.ke'
         # Prepend 'mail.' if not already present
         if not smtp_server.startswith('mail.'):
             smtp_server = f'mail.{smtp_server}'
@@ -332,21 +332,54 @@ def send_email(task_id, email_data):
             'email_user': email_data['contactemail']
         })
 
-        # Send email
-        with smtplib.SMTP_SSL(smtp_server, smtp_port) as server:
-            server.login(email_data['contactemail'], email_data['contactemailpassword'])
-            server.send_message(message)
-        
-        logger.info("Email sent successfully", extra={
-            'task_id': task_id,
-            'email_id': email_data.get('id'),
-            'status': 'success'
-        })
-        
-        return "Success", True
-        
+        # Send email via primary SMTP
+        try:
+            with smtplib.SMTP_SSL(smtp_server, smtp_port) as server:
+                server.login(email_data['contactemail'], email_data['contactemailpassword'])
+                server.send_message(message)
+
+            logger.info("Email sent successfully via primary SMTP", extra={
+                'task_id': task_id,
+                'email_id': email_data.get('id'),
+                'status': 'success'
+            })
+            return "Success", True
+
+        except Exception as primary_exc:
+            logger.warning(f"Primary SMTP failed, attempting Gmail failover: {primary_exc}", extra={
+                'task_id': task_id,
+                'email_id': email_data.get('id'),
+                'smtp_server': smtp_server
+            })
+
+            # Gmail failover
+            gmail_user = os.getenv('GMAIL_USERNAME')
+            gmail_password = os.getenv('GMAIL_APP_PASSWORD')
+            gmail_server = os.getenv('GMAIL_SMTP_SERVER', 'smtp.gmail.com')
+            gmail_port = int(os.getenv('GMAIL_SMTP_PORT', 587))
+
+            if not gmail_user or not gmail_password:
+                raise primary_exc
+
+            # Update From header to Gmail sender
+            message.replace_header('From', f'{email_data["emaildisplayname"]} <{gmail_user}>')
+
+            with smtplib.SMTP(gmail_server, gmail_port) as server:
+                server.ehlo()
+                server.starttls()
+                server.login(gmail_user, gmail_password)
+                server.send_message(message)
+
+            logger.info("Email sent successfully via Gmail failover", extra={
+                'task_id': task_id,
+                'email_id': email_data.get('id'),
+                'status': 'success',
+                'via': 'gmail_failover'
+            })
+            return "Success (via Gmail failover)", True
+
     except Exception as exc:
-        logger.error("Email sending failed", extra={
+        logger.error("Email sending failed on all providers", extra={
             'task_id': task_id,
             'email_id': email_data.get('id'),
             'status': 'failed'
